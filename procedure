@@ -1,0 +1,63 @@
+create or replace NONEDITIONABLE procedure        insertar_venta(
+p_ID_VENTA NUMBER,
+p_ID_CLIENTE number, 
+p_ID_VEHICULO number,
+p_USUARIO_VENTA varchar2, 
+p_PRECIO_VENTA number
+) as
+
+
+cursor c_cursor(ID_CLIENTE number) is
+select ID_VENTA
+from ventas.VENTA
+WHERE ID_CLIENTE = p_ID_CLIENTE;
+
+--VARIABLE
+LUV_TOTAL_VEHICULOS_DISPONIBLES NUMBER;
+
+
+begin
+
+   FOR I IN C_CURSOR(p_ID_CLIENTE) LOOP
+    LUV_TOTAL_VEHICULOS_DISPONIBLES := vehiulos.VEHICULOS_DISPONIBLES_X_ID_VENTA(I.ID_VENTA);
+     EXIT;
+      END LOOP;
+
+--VALIDAR EL VALOR DE LA VARIABLE LUV_TOTAL_VEHICULOS_DISPONIBLES
+IF NVL(LUV_TOTAL_VEHICULOS_DISPONIBLES,0) <= 0 THEN 
+ventas.BITACORA_P_INSERTAR('insertar_venta','CONTROLADA','ID_VENTA NO TIENE VEHICULOS DIPONIBLES ');
+
+ELSE 
+
+INSERT INTO ventas.venta(
+ID_VENTA,
+ID_CLIENTE,
+ID_VEHICULO,
+USUARIO_VENTA,
+PRECIO_VENTA)  
+
+VALUES (
+P_ID_VENTA,
+p_ID_CLIENTE,
+p_ID_VEHICULO,
+p_USUARIO_VENTA,
+p_PRECIO_VENTA
+);
+END IF;
+
+commit;
+
+
+
+
+--obtene la secuenncia actual del id_venta
+
+
+exception
+when dup_val_on_index then
+ventas.BITACORA_P_INSERTAR('insertar_venta','dub_val_on_index',SQLERRM);
+
+WHEN OTHERS THEN
+ventas.BITACORA_P_INSERTAR('insertar_venta','OTHERS',SQLERRM);
+
+end;
